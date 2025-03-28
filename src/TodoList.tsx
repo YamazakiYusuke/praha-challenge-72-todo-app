@@ -1,7 +1,8 @@
 import { Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
-import { Button, Checkbox, ClickAwayListener, Container, IconButton, List, ListItem, ListItemIcon, ListItemSecondaryAction, ListItemText, Paper, TextField } from '@mui/material';
+import { Button, Checkbox, ClickAwayListener, Container, IconButton, List, ListItem, ListItemIcon, ListItemText, Paper, TextField } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import React, { ChangeEvent, useEffect, useRef, useState } from 'react';
+import TodoListLogic from './TodoListLogic';
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(2),
@@ -16,6 +17,8 @@ function TodoList() {
   const [editText, setEditText] = useState('');
   const textFieldRef = useRef<HTMLInputElement>(null);
 
+  const todoListLogic = useRef(new TodoListLogic()).current;
+
   useEffect(() => {
     if (editingTodoId !== null && textFieldRef.current) {
       textFieldRef.current.focus();
@@ -27,22 +30,21 @@ function TodoList() {
   };
 
   const handleAddTodo = () => {
-    if (newTodo.trim() !== '') {
-      setTodos([...todos, { id: Date.now(), text: newTodo, completed: false }]);
+    const result = todoListLogic.addTodo(newTodo);
+    if (result) {
+      setTodos(todoListLogic.getTodos());
       setNewTodo('');
     }
   };
 
   const handleDeleteTodo = (id: number) => {
-    setTodos(todos.filter((todo) => todo.id !== id));
+    todoListLogic.deleteTodo(id);
+    setTodos(todoListLogic.getTodos());
   };
 
   const handleToggleComplete = (id: number) => {
-    setTodos(
-      todos.map((todo) =>
-        todo.id === id ? { ...todo, completed: !todo.completed } : todo
-      )
-    );
+    todoListLogic.toggleComplete(id);
+    setTodos(todoListLogic.getTodos());
   };
 
   const handleEditTodo = (id: number, text: string) => {
@@ -51,10 +53,9 @@ function TodoList() {
   };
 
   const handleSaveTodo = (id: number) => {
-    if (editText.trim() !== '') {
-      setTodos(
-        todos.map((todo) => (todo.id === id ? { ...todo, text: editText } : todo))
-      );
+    const result = todoListLogic.editTodo(id, editText);
+    if (result) {
+      setTodos(todoListLogic.getTodos());
       setEditingTodoId(null);
       setEditText('');
     }
@@ -84,8 +85,29 @@ function TodoList() {
           Add
         </Button>
         <List>
-          {todos.map((todo) => (
-            <ListItem key={todo.id}>
+          {[
+            ...todos.filter((todo) => !todo.completed),
+            ...todos.filter((todo) => todo.completed),
+          ].map((todo) => (
+            <ListItem
+              key={todo.id}
+              secondaryAction={
+                <div>
+                  {editingTodoId !== todo.id ? (
+                    <IconButton
+                      edge="end"
+                      aria-label="edit"
+                      onClick={() => handleEditTodo(todo.id, todo.text)}
+                    >
+                      <EditIcon />
+                    </IconButton>
+                  ) : null}
+                  <IconButton edge="end" aria-label="delete" onClick={() => handleDeleteTodo(todo.id)}>
+                    <DeleteIcon />
+                  </IconButton>
+                </div>
+              }
+            >
               <ListItemIcon>
                 <Checkbox
                   checked={todo.completed}
@@ -109,23 +131,12 @@ function TodoList() {
               ) : (
                 <ListItemText
                   primary={todo.text}
-                  style={{ textDecoration: todo.completed ? 'line-through' : 'none' }}
+                  style={{
+                    textDecoration: todo.completed ? 'line-through' : 'none',
+                    color: todo.completed ? '#888888' : 'inherit'
+                  }}
                 />
               )}
-              <ListItemSecondaryAction>
-                {editingTodoId !== todo.id ? (
-                  <IconButton
-                    edge="end"
-                    aria-label="edit"
-                    onClick={() => handleEditTodo(todo.id, todo.text)}
-                  >
-                    <EditIcon />
-                  </IconButton>
-                ) : null}
-                <IconButton edge="end" aria-label="delete" onClick={() => handleDeleteTodo(todo.id)}>
-                  <DeleteIcon />
-                </IconButton>
-              </ListItemSecondaryAction>
             </ListItem>
           ))}
         </List>
