@@ -1,6 +1,9 @@
+import TodoRepository from './repositories/TodoRepository';
+
 class TodoListLogic {
   constructor() {
-    this.todos = [];
+    this.repository = new TodoRepository();
+    this.todos = this.repository.getAll();
   }
 
   addTodo(newTodo) {
@@ -13,19 +16,19 @@ class TodoListLogic {
       completed: false
     };
     this.todos = [...this.todos, todo];
-    return todo;
+    return this.repository.save(this.todos);
   }
 
   deleteTodo(id) {
     this.todos = this.todos.filter((todo) => todo.id !== id);
-    return this.todos;
+    return this.repository.save(this.todos);
   }
 
   toggleComplete(id) {
     this.todos = this.todos.map((todo) =>
       todo.id === id ? { ...todo, completed: !todo.completed } : todo
     );
-    return this.todos;
+    return this.repository.save(this.todos);
   }
 
   editTodo(id, text) {
@@ -35,7 +38,7 @@ class TodoListLogic {
     this.todos = this.todos.map((todo) =>
       todo.id === id ? { ...todo, text: text } : todo
     );
-    return this.todos;
+    return this.repository.save(this.todos);
   }
 
   getTodos() {
