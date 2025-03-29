@@ -1,15 +1,21 @@
-class TodoRepository {
+import ITodoRepository from './ITodoRepository';
+import TodoItem from './TodoItem';
+
+class TodoRepository extends ITodoRepository {
   constructor() {
+    super();
     this.storageKey = 'todos';
   }
 
   getAll() {
     const todos = localStorage.getItem(this.storageKey);
-    return todos ? JSON.parse(todos) : [];
+    if (!todos) return [];
+    return JSON.parse(todos).map(todo => TodoItem.fromJSON(todo));
   }
 
   save(todos) {
-    localStorage.setItem(this.storageKey, JSON.stringify(todos));
+    const jsonTodos = todos.map(todo => todo.toJSON());
+    localStorage.setItem(this.storageKey, JSON.stringify(jsonTodos));
     return todos;
   }
 }
