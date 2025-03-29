@@ -62,10 +62,9 @@ describe('TodoListLogic', () => {
     it('should delete a todo', async () => {
       // Arrange
       const initialTodo = new TodoItem(1, 'Test todo');
-      mockRepository.save.mockResolvedValueOnce([initialTodo]);
-      const todos = await todoListLogic.addTodo('Test todo');
-      if (!todos) throw new Error('Failed to add todo');
-      mockRepository.save.mockResolvedValue([]);
+      mockRepository.getAll.mockResolvedValueOnce([initialTodo]);
+      await todoListLogic.initialize();
+      mockRepository.save.mockResolvedValueOnce([]);
 
       // Act
       const result = await todoListLogic.deleteTodo(initialTodo.id);
@@ -80,21 +79,18 @@ describe('TodoListLogic', () => {
     it('should toggle todo completion status', async () => {
       // Arrange
       const initialTodo = new TodoItem(1, 'Test todo', false);
-      mockRepository.save.mockResolvedValueOnce([initialTodo]);
-      const todos = await todoListLogic.addTodo('Test todo');
-      if (!todos) throw new Error('Failed to add todo');
+      mockRepository.getAll.mockResolvedValueOnce([initialTodo]);
+      await todoListLogic.initialize();  // Initialize with the initial todo instead of adding new
 
       const expectedTodo = new TodoItem(initialTodo.id, initialTodo.text, true);
-      mockRepository.save.mockResolvedValue([expectedTodo]);
+      mockRepository.save.mockResolvedValueOnce([expectedTodo]);
 
       // Act
       const result = await todoListLogic.toggleComplete(initialTodo.id);
 
       // Assert
       expect(result[0].completed).toBe(true);
-      expect(mockRepository.save).toHaveBeenCalledWith([
-        expect.objectContaining({ completed: true })
-      ]);
+      expect(mockRepository.save).toHaveBeenCalledWith([expectedTodo]);
     });
   });
 
@@ -102,30 +98,26 @@ describe('TodoListLogic', () => {
     it('should edit a todo with valid text', async () => {
       // Arrange
       const initialTodo = new TodoItem(1, 'Test todo');
-      mockRepository.save.mockResolvedValueOnce([initialTodo]);
-      const todos = await todoListLogic.addTodo('Test todo');
-      if (!todos) throw new Error('Failed to add todo');
+      mockRepository.getAll.mockResolvedValueOnce([initialTodo]);
+      await todoListLogic.initialize();
 
       const newText = 'Edited todo';
       const expectedTodo = new TodoItem(initialTodo.id, newText, initialTodo.completed);
-      mockRepository.save.mockResolvedValue([expectedTodo]);
+      mockRepository.save.mockResolvedValueOnce([expectedTodo]);
 
       // Act
       const result = await todoListLogic.editTodo(initialTodo.id, newText);
 
       // Assert
       expect(result?.[0].text).toBe(newText);
-      expect(mockRepository.save).toHaveBeenCalledWith([
-        expect.objectContaining({ text: newText })
-      ]);
+      expect(mockRepository.save).toHaveBeenCalledWith([expectedTodo]);
     });
 
     it('should not edit todo with empty text', async () => {
       // Arrange
       const initialTodo = new TodoItem(1, 'Test todo');
-      mockRepository.save.mockResolvedValueOnce([initialTodo]);
-      const todos = await todoListLogic.addTodo('Test todo');
-      if (!todos) throw new Error('Failed to add todo');
+      mockRepository.getAll.mockResolvedValueOnce([initialTodo]);
+      await todoListLogic.initialize();
       const emptyText = '  ';
 
       // Act
