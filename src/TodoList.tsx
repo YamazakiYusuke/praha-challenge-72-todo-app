@@ -20,6 +20,14 @@ function TodoList() {
   const todoListLogic = useRef(new TodoListLogic()).current;
 
   useEffect(() => {
+    const initializeTodos = async () => {
+      await todoListLogic.initialize();
+      setTodos(todoListLogic.getTodos());
+    };
+    initializeTodos();
+  }, []);
+
+  useEffect(() => {
     if (editingTodoId !== null && textFieldRef.current) {
       textFieldRef.current.focus();
     }
@@ -29,8 +37,8 @@ function TodoList() {
     setNewTodo(event.target.value);
   };
 
-  const handleAddTodo = () => {
-    const result = todoListLogic.addTodo(newTodo);
+  const handleAddTodo = async () => {
+    const result = await todoListLogic.addTodo(newTodo);
     if (result) {
       setTodos(todoListLogic.getTodos());
       setNewTodo('');
@@ -52,8 +60,8 @@ function TodoList() {
     setEditText(text);
   };
 
-  const handleSaveTodo = (id: number) => {
-    const result = todoListLogic.editTodo(id, editText);
+  const handleSaveTodo = async (id: number) => {
+    const result = await todoListLogic.editTodo(id, editText);
     if (result) {
       setTodos(todoListLogic.getTodos());
       setEditingTodoId(null);

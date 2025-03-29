@@ -1,6 +1,6 @@
 import TodoListLogic from './TodoListLogic';
 import type ITodoRepository from './repositories/ITodoRepository';
-import TodoItem from './repositories/TodoItem';
+import TodoItem from './repositories/TodoItem.tsx';
 
 // モックの設定
 jest.mock('./repositories/TodoRepository');
@@ -8,117 +8,132 @@ jest.mock('./repositories/TodoRepository');
 describe('TodoListLogic', () => {
   let todoListLogic: TodoListLogic;
   let mockRepository: ITodoRepository & {
-    save: jest.Mock<TodoItem[], [TodoItem[]]>;
-    getAll: jest.Mock<TodoItem[], []>;
+    save: jest.Mock<Promise<TodoItem[]>, [TodoItem[]]>;
+    getAll: jest.Mock<Promise<TodoItem[]>, []>;
   };
 
-  beforeEach(() => {
-    // モックリポジトリの作成
+  beforeEach(async () => {
+    // Arrange
     mockRepository = {
-      save: jest.fn().mockImplementation((todos: TodoItem[]) => todos),
-      getAll: jest.fn().mockReturnValue([])
+      save: jest.fn().mockResolvedValue([]),
+      getAll: jest.fn().mockResolvedValue([])
     };
-
-    // DIを使用してモックリポジトリを注入
     todoListLogic = new TodoListLogic(mockRepository);
+    await todoListLogic.initialize();
   });
 
   describe('addTodo', () => {
-    it('should add a valid todo', () => {
+    it('should add a valid todo', async () => {
       // Arrange
-      const newTodoText: string = 'Test todo';
+      const newTodoText = 'Test todo';
       const expectedTodo: Partial<TodoItem> = {
         id: expect.any(Number),
         text: newTodoText,
         completed: false
       };
+      mockRepository.save.mockResolvedValue([expectedTodo as TodoItem]);
 
       // Act
-      const result: TodoItem[] | null = todoListLogic.addTodo(newTodoText);
+      const result = await todoListLogic.addTodo(newTodoText);
 
       // Assert
       expect(result).toEqual([expectedTodo]);
-      expect(mockRepository.save).toHaveBeenCalled();
+      expect(mockRepository.save).toHaveBeenCalledTimes(1);
+      expect(mockRepository.save).toHaveBeenCalledWith(expect.arrayContaining([
+        expect.objectContaining(expectedTodo)
+      ]));
     });
 
-    it('should not add empty todo', () => {
+    it('should not add empty todo', async () => {
       // Arrange
       const emptyTodoText = '  ';
 
       // Act
-      const result = todoListLogic.addTodo(emptyTodoText);
+      const result = await todoListLogic.addTodo(emptyTodoText);
 
       // Assert
       expect(result).toBeNull();
+      expect(mockRepository.save).not.toHaveBeenCalled();
       expect(todoListLogic.getTodos()).toHaveLength(0);
     });
   });
 
   describe('deleteTodo', () => {
-    it('should delete a todo', () => {
+    it('should delete a todo', async () => {
       // Arrange
-      const todos = todoListLogic.addTodo('Test todo');
+      const initialTodo = new TodoItem(1, 'Test todo');
+      mockRepository.save.mockResolvedValueOnce([initialTodo]);
+      const todos = await todoListLogic.addTodo('Test todo');
       if (!todos) throw new Error('Failed to add todo');
-      const todoId = todos[0].id;
-
-      mockRepository.save.mockImplementation(() => []);
+      mockRepository.save.mockResolvedValue([]);
 
       // Act
-      const result = todoListLogic.deleteTodo(todoId);
+      const result = await todoListLogic.deleteTodo(initialTodo.id);
 
       // Assert
       expect(result).toHaveLength(0);
+      expect(mockRepository.save).toHaveBeenCalledWith([]);
     });
   });
 
   describe('toggleComplete', () => {
-    it('should toggle todo completion status', () => {
+    it('should toggle todo completion status', async () => {
       // Arrange
-      const todos = todoListLogic.addTodo('Test todo');
+      const initialTodo = new TodoItem(1, 'Test todo', false);
+      mockRepository.save.mockResolvedValueOnce([initialTodo]);
+      const todos = await todoListLogic.addTodo('Test todo');
       if (!todos) throw new Error('Failed to add todo');
-      const todo = todos[0];
 
-      const updatedTodo = new TodoItem(todo.id, todo.text, true);
-      mockRepository.save.mockReturnValue([updatedTodo]);
+      const expectedTodo = new TodoItem(initialTodo.id, initialTodo.text, true);
+      mockRepository.save.mockResolvedValue([expectedTodo]);
 
       // Act
-      const result = todoListLogic.toggleComplete(todo.id);
+      const result = await todoListLogic.toggleComplete(initialTodo.id);
 
       // Assert
       expect(result[0].completed).toBe(true);
+      expect(mockRepository.save).toHaveBeenCalledWith([
+        expect.objectContaining({ completed: true })
+      ]);
     });
   });
 
   describe('editTodo', () => {
-    it('should edit a todo with valid text', () => {
+    it('should edit a todo with valid text', async () => {
       // Arrange
-      const todos = todoListLogic.addTodo('Test todo');
+      const initialTodo = new TodoItem(1, 'Test todo');
+      mockRepository.save.mockResolvedValueOnce([initialTodo]);
+      const todos = await todoListLogic.addTodo('Test todo');
       if (!todos) throw new Error('Failed to add todo');
-      const todo = todos[0];
-      const newText = 'Edited todo';
 
-      const updatedTodo = new TodoItem(todo.id, newText, todo.completed);
-      mockRepository.save.mockReturnValue([updatedTodo]);
+      const newText = 'Edited todo';
+      const expectedTodo = new TodoItem(initialTodo.id, newText, initialTodo.completed);
+      mockRepository.save.mockResolvedValue([expectedTodo]);
 
       // Act
-      const result = todoListLogic.editTodo(todo.id, newText);
+      const result = await todoListLogic.editTodo(initialTodo.id, newText);
 
       // Assert
       expect(result?.[0].text).toBe(newText);
+      expect(mockRepository.save).toHaveBeenCalledWith([
+        expect.objectContaining({ text: newText })
+      ]);
     });
 
-    it('should not edit todo with empty text', () => {
+    it('should not edit todo with empty text', async () => {
       // Arrange
-      const todos = todoListLogic.addTodo('Test todo');
+      const initialTodo = new TodoItem(1, 'Test todo');
+      mockRepository.save.mockResolvedValueOnce([initialTodo]);
+      const todos = await todoListLogic.addTodo('Test todo');
       if (!todos) throw new Error('Failed to add todo');
-      const todo = todos[0];
       const emptyText = '  ';
 
       // Act
-      const result = todoListLogic.editTodo(todo.id, emptyText);
+      const result = await todoListLogic.editTodo(initialTodo.id, emptyText);
 
       // Assert
       expect(result).toBeNull();
+      expect(mockRepository.save).not.toHaveBeenCalled();
       expect(todoListLogic.getTodos()[0].text).toBe('Test todo');
     });
   });
