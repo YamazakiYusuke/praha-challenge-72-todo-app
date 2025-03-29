@@ -2,7 +2,7 @@ import { Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
 import { Button, Checkbox, ClickAwayListener, Container, IconButton, List, ListItem, ListItemIcon, ListItemText, Paper, TextField } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import React, { ChangeEvent, useEffect, useRef, useState } from 'react';
-import TodoListLogic from './TodoListLogic';
+import TodoListLogic from './TodoListLogic.ts';
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(2),
