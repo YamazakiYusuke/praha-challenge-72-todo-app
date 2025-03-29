@@ -1,38 +1,40 @@
 import TodoListLogic from './TodoListLogic';
-import TodoRepository from './repositories/TodoRepository';
+import type ITodoRepository from './repositories/ITodoRepository';
+import TodoItem from './repositories/TodoItem';
 
 // モックの設定
 jest.mock('./repositories/TodoRepository');
 
 describe('TodoListLogic', () => {
-  let todoListLogic;
-  let mockRepository;
+  let todoListLogic: TodoListLogic;
+  let mockRepository: ITodoRepository & {
+    save: jest.Mock<TodoItem[], [TodoItem[]]>;
+    getAll: jest.Mock<TodoItem[], []>;
+  };
 
   beforeEach(() => {
-    // モックをクリアして再設定
-    jest.clearAllMocks();
+    // モックリポジトリの作成
     mockRepository = {
-      storageKey: 'todos',
-      save: jest.fn().mockImplementation(todos => todos),
+      save: jest.fn().mockImplementation((todos: TodoItem[]) => todos),
       getAll: jest.fn().mockReturnValue([])
     };
-    TodoRepository.prototype = mockRepository;
 
-    todoListLogic = new TodoListLogic();
+    // DIを使用してモックリポジトリを注入
+    todoListLogic = new TodoListLogic(mockRepository);
   });
 
   describe('addTodo', () => {
     it('should add a valid todo', () => {
       // Arrange
-      const newTodoText = 'Test todo';
-      const expectedTodo = {
+      const newTodoText: string = 'Test todo';
+      const expectedTodo: Partial<TodoItem> = {
         id: expect.any(Number),
         text: newTodoText,
         completed: false
       };
 
       // Act
-      const result = todoListLogic.addTodo(newTodoText);
+      const result: TodoItem[] | null = todoListLogic.addTodo(newTodoText);
 
       // Assert
       expect(result).toEqual([expectedTodo]);
@@ -55,11 +57,14 @@ describe('TodoListLogic', () => {
   describe('deleteTodo', () => {
     it('should delete a todo', () => {
       // Arrange
+      const todos = todoListLogic.addTodo('Test todo');
+      if (!todos) throw new Error('Failed to add todo');
+      const todoId = todos[0].id;
+
       mockRepository.save.mockImplementation(() => []);
-      const todo = todoListLogic.addTodo('Test todo');
 
       // Act
-      const result = todoListLogic.deleteTodo(todo.id);
+      const result = todoListLogic.deleteTodo(todoId);
 
       // Assert
       expect(result).toHaveLength(0);
@@ -69,13 +74,15 @@ describe('TodoListLogic', () => {
   describe('toggleComplete', () => {
     it('should toggle todo completion status', () => {
       // Arrange
-      mockRepository.save.mockImplementation(todos => todos);
-      const todo = todoListLogic.addTodo('Test todo');
-      const updatedTodo = { ...todo[0], completed: true };
+      const todos = todoListLogic.addTodo('Test todo');
+      if (!todos) throw new Error('Failed to add todo');
+      const todo = todos[0];
+
+      const updatedTodo = new TodoItem(todo.id, todo.text, true);
       mockRepository.save.mockReturnValue([updatedTodo]);
 
       // Act
-      const result = todoListLogic.toggleComplete(todo[0].id);
+      const result = todoListLogic.toggleComplete(todo.id);
 
       // Assert
       expect(result[0].completed).toBe(true);
@@ -85,22 +92,26 @@ describe('TodoListLogic', () => {
   describe('editTodo', () => {
     it('should edit a todo with valid text', () => {
       // Arrange
-      mockRepository.save.mockImplementation(todos => todos);
-      const todo = todoListLogic.addTodo('Test todo');
+      const todos = todoListLogic.addTodo('Test todo');
+      if (!todos) throw new Error('Failed to add todo');
+      const todo = todos[0];
       const newText = 'Edited todo';
-      const updatedTodo = { ...todo[0], text: newText };
+
+      const updatedTodo = new TodoItem(todo.id, newText, todo.completed);
       mockRepository.save.mockReturnValue([updatedTodo]);
 
       // Act
-      const result = todoListLogic.editTodo(todo[0].id, newText);
+      const result = todoListLogic.editTodo(todo.id, newText);
 
       // Assert
-      expect(result[0].text).toBe(newText);
+      expect(result?.[0].text).toBe(newText);
     });
 
     it('should not edit todo with empty text', () => {
       // Arrange
-      const todo = todoListLogic.addTodo('Test todo');
+      const todos = todoListLogic.addTodo('Test todo');
+      if (!todos) throw new Error('Failed to add todo');
+      const todo = todos[0];
       const emptyText = '  ';
 
       // Act
