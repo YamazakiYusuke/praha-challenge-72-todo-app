@@ -7,6 +7,7 @@ import LoginButton from './components/LoginButton.tsx';
 import LogoutButton from './components/LogoutButton.tsx';
 import TodoList from './TodoList.tsx';
 import UnauthorizedPage from './UnauthorizedPage.tsx';
+import UserProfilePage from './UserProfilePage.tsx';
 
 function App() {
   const { isAuthenticated, isLoading } = useAuth0();
@@ -30,6 +31,16 @@ function App() {
 
           <Box sx={{ flexGrow: 1 }} />
 
+          {isAuthenticated && (
+            <Button
+              color="inherit"
+              onClick={() => navigate('/profile')}
+              sx={{ mr: 2 }}
+            >
+              プロフィール
+            </Button>
+          )}
+
           <Button
             color="inherit"
             onClick={() => navigate('/unauthorized')}
@@ -44,6 +55,7 @@ function App() {
       <Box sx={{ mt: 3 }}>
         <Routes>
           <Route path="/unauthorized" element={<UnauthorizedPage />} />
+          <Route path="/profile" element={<UserProfilePage />} />
           <Route path="/" element={isAuthenticated ? <TodoList /> : <UnauthorizedPage />} />
         </Routes>
       </Box>
