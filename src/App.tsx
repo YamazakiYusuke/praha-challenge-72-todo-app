@@ -1,13 +1,16 @@
 import { useAuth0 } from "@auth0/auth0-react";
-import { AppBar, Box, Toolbar, Typography } from '@mui/material';
+import { AppBar, Box, Button, Toolbar, Typography } from '@mui/material';
 import React from 'react';
+import { Route, Routes, useNavigate } from 'react-router-dom';
 import './App.css';
 import LoginButton from './components/LoginButton.tsx';
 import LogoutButton from './components/LogoutButton.tsx';
 import TodoList from './TodoList.tsx';
+import UnauthorizedPage from './UnauthorizedPage.tsx';
 
 function App() {
   const { isAuthenticated, isLoading } = useAuth0();
+  const navigate = useNavigate();
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -17,14 +20,32 @@ function App() {
     <div className="App">
       <AppBar position="static">
         <Toolbar>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+          <Typography
+            variant="h6"
+            component="div"
+            sx={{ mr: 2 }}
+          >
             Todo App
           </Typography>
+
+          <Box sx={{ flexGrow: 1 }} />
+
+          <Button
+            color="inherit"
+            onClick={() => navigate('/unauthorized')}
+            sx={{ mr: 2 }}
+          >
+            認証確認ページ
+          </Button>
+
           {isAuthenticated ? <LogoutButton /> : <LoginButton />}
         </Toolbar>
       </AppBar>
       <Box sx={{ mt: 3 }}>
-        {isAuthenticated && <TodoList />}
+        <Routes>
+          <Route path="/unauthorized" element={<UnauthorizedPage />} />
+          <Route path="/" element={isAuthenticated ? <TodoList /> : <UnauthorizedPage />} />
+        </Routes>
       </Box>
     </div>
   );
