@@ -45,8 +45,8 @@ function TodoList() {
     }
   };
 
-  const handleDeleteTodo = (id: number) => {
-    todoListLogic.deleteTodo(id);
+  const handleDeleteTodo = async (id: number) => {
+    await todoListLogic.deleteTodo(id);
     setTodos(todoListLogic.getTodos());
   };
 
