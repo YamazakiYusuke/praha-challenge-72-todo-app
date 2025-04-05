@@ -50,8 +50,8 @@ function TodoList() {
     setTodos(todoListLogic.getTodos());
   };
 
-  const handleToggleComplete = (id: number) => {
-    todoListLogic.toggleComplete(id);
+  const handleToggleComplete = async (id: number) => {
+    await todoListLogic.toggleComplete(id);
     setTodos(todoListLogic.getTodos());
   };
 
