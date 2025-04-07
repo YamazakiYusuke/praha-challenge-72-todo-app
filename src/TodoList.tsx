@@ -1,7 +1,7 @@
 import { Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
 import { Button, Checkbox, ClickAwayListener, Container, IconButton, List, ListItem, ListItemIcon, ListItemText, Paper, TextField } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import React, { ChangeEvent, useEffect, useRef, useState } from 'react';
+import React, { ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import TodoListLogic from './TodoListLogic.ts';
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
@@ -17,7 +17,7 @@ function TodoList() {
   const [editText, setEditText] = useState('');
   const textFieldRef = useRef<HTMLInputElement>(null);
 
-  const todoListLogic = useRef(new TodoListLogic()).current;
+  const todoListLogic = useMemo(() => new TodoListLogic(), []);
 
   useEffect(() => {
     const initializeTodos = async () => {
@@ -25,7 +25,7 @@ function TodoList() {
       setTodos(todoListLogic.getTodos());
     };
     initializeTodos();
-  }, []);
+  }, [todoListLogic]);
 
   useEffect(() => {
     if (editingTodoId !== null && textFieldRef.current) {
@@ -37,37 +37,39 @@ function TodoList() {
     setNewTodo(event.target.value);
   };
 
-  const handleAddTodo = async () => {
+  const handleAddTodo = useCallback(async () => {
     const result = await todoListLogic.addTodo(newTodo);
     if (result) {
       setTodos(todoListLogic.getTodos());
       setNewTodo('');
     }
-  };
+  }, [todoListLogic, newTodo]);
 
-  const handleDeleteTodo = (id: number) => {
-    todoListLogic.deleteTodo(id);
-    setTodos(todoListLogic.getTodos());
-  };
+  const handleDeleteTodo = useCallback((id: number) => {
+    todoListLogic.deleteTodo(id).then(() => {
+      setTodos(todoListLogic.getTodos());
+    });
+  }, [todoListLogic]);
 
-  const handleToggleComplete = (id: number) => {
-    todoListLogic.toggleComplete(id);
-    setTodos(todoListLogic.getTodos());
-  };
+  const handleToggleComplete = useCallback((id: number) => {
+    todoListLogic.toggleComplete(id).then(() => {
+      setTodos(todoListLogic.getTodos());
+    });
+  }, [todoListLogic]);
 
   const handleEditTodo = (id: number, text: string) => {
     setEditingTodoId(id);
     setEditText(text);
   };
 
-  const handleSaveTodo = async (id: number) => {
+  const handleSaveTodo = useCallback(async (id: number) => {
     const result = await todoListLogic.editTodo(id, editText);
     if (result) {
       setTodos(todoListLogic.getTodos());
       setEditingTodoId(null);
       setEditText('');
     }
-  };
+  }, [todoListLogic, editText]);
 
   const handleCancelEdit = () => {
     setEditingTodoId(null);
