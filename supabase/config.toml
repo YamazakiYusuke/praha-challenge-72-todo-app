@@ -1,0 +1,3 @@
+[functions]
+[functions.your-function-name]
+verify_jwt = false  # 必要に応じてtrueに設定 
