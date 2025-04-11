@@ -1,12 +1,12 @@
+import InMemoryTodoRepository from './repositories/InMemoryTodoRepository.tsx';
 import ITodoRepository from './repositories/ITodoRepository';
 import TodoItem from './repositories/TodoItem.tsx';
-import TodoRepository from './repositories/TodoRepository.tsx';
 
 class TodoListLogic {
   private repository: ITodoRepository;
   private todos: TodoItem[] = [];
 
-  constructor(repository: ITodoRepository = new TodoRepository()) {
+  constructor(repository: ITodoRepository = new InMemoryTodoRepository()) {
     this.repository = repository;
   }
 

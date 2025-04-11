@@ -1,6 +1,6 @@
 import { useAuth0 } from "@auth0/auth0-react";
 import { AppBar, Box, Button, Toolbar, Typography } from '@mui/material';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Route, Routes, useNavigate } from 'react-router-dom';
 import './App.css';
 import LoginButton from './components/LoginButton.tsx';
@@ -10,12 +10,29 @@ import UnauthorizedPage from './UnauthorizedPage.tsx';
 import UserProfilePage from './UserProfilePage.tsx';
 
 function App() {
-  const { isAuthenticated, isLoading } = useAuth0();
+  const { isAuthenticated, loginWithRedirect, isLoading } = useAuth0();
   const navigate = useNavigate();
 
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
+  useEffect(() => {
+    if (!isAuthenticated) {
+      const redirectToLogin = async () => {
+        await loginWithRedirect({
+          appState: { returnTo: window.location.pathname }
+        });
+      };
+
+      // 3秒後にログインページにリダイレクト
+      const timer = setTimeout(() => {
+        redirectToLogin();
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isAuthenticated, loginWithRedirect]);
+
+  // if (isLoading) {
+  //   return <div>Loading...</div>;
+  // }
 
   return (
     <div className="App">
