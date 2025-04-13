@@ -55,6 +55,7 @@ function App() {
           <Typography
             variant="h6"
             component="div"
+            onClick={() => navigate('/')}
             sx={{ mr: 2 }}
           >
             Todo App
