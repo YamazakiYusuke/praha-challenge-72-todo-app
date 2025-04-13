@@ -73,7 +73,7 @@ function App() {
         <Routes>
           <Route path="/unauthorized" element={<UnauthorizedPage />} />
           <Route path="/profile" element={<UserProfilePage />} />
-          <Route path="/" element={isAuthenticated ? <TodoList /> : <UnauthorizedPage />} />
+          <Route path="/" element={<TodoList />} />
         </Routes>
       </Box>
     </div>
