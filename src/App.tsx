@@ -1,5 +1,5 @@
 import { useAuth0 } from "@auth0/auth0-react";
-import { AppBar, Box, Button, Toolbar, Typography } from '@mui/material';
+import { AppBar, Box, Button, CircularProgress, Toolbar, Typography } from '@mui/material';
 import React, { useEffect } from 'react';
 import { Route, Routes, useNavigate } from 'react-router-dom';
 import './App.css';
@@ -30,9 +30,23 @@ function App() {
     }
   }, [isAuthenticated, loginWithRedirect]);
 
-  // if (isLoading) {
-  //   return <div>Loading...</div>;
-  // }
+  if (isLoading || !isAuthenticated) {
+    return (
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="100vh"
+        flexDirection="column"
+        sx={{ bgcolor: 'background.default' }}
+      >
+        <CircularProgress color="primary" size={60} thickness={4} />
+        <Typography variant="h6" sx={{ mt: 2, color: 'text.secondary' }}>
+          読み込み中...
+        </Typography>
+      </Box>
+    );
+  }
 
   return (
     <div className="App">
