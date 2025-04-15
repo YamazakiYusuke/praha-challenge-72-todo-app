@@ -5,9 +5,9 @@ import { Route, Routes, useNavigate } from 'react-router-dom';
 import './App.css';
 import LoginButton from './components/LoginButton.tsx';
 import LogoutButton from './components/LogoutButton.tsx';
+import RepositoryFactory from './composables/RepositoryFactory.tsx';
 import { syncUserWithSupabase } from './lib/auth.ts';
 import ITodoRepository from './repositories/ITodoRepository';
-import RepositoryFactory from './composables/RepositoryFactory.tsx';
 import TodoList from './TodoList.tsx';
 import UnauthorizedPage from './UnauthorizedPage.tsx';
 import UserProfilePage from './UserProfilePage.tsx';
@@ -46,9 +46,11 @@ function App() {
         } finally {
           setRepoLoading(false);
         }
-      } else if (!isLoading) {
+      } else if (!isLoading && isAuthenticated) {
         const repo = await RepositoryFactory.getInstance().createTodoRepository();
         setRepository(repo);
+        setRepoLoading(false);
+      } else if (!isLoading && !isAuthenticated) {
         setRepoLoading(false);
       }
     }
@@ -56,7 +58,7 @@ function App() {
     setupAuth();
   }, [isAuthenticated, user, isLoading]);
 
-  if (isLoading || (isAuthenticated && repoLoading)) {
+  if (isLoading || repoLoading || !isAuthenticated) {
     return (
       <Box
         display="flex"
