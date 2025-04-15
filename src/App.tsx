@@ -1,17 +1,22 @@
 import { useAuth0 } from "@auth0/auth0-react";
 import { AppBar, Box, Button, CircularProgress, Toolbar, Typography } from '@mui/material';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Route, Routes, useNavigate } from 'react-router-dom';
 import './App.css';
 import LoginButton from './components/LoginButton.tsx';
 import LogoutButton from './components/LogoutButton.tsx';
+import { syncUserWithSupabase } from './lib/auth.ts';
+import ITodoRepository from './repositories/ITodoRepository';
+import RepositoryFactory from './repositories/RepositoryFactory.tsx';
 import TodoList from './TodoList.tsx';
 import UnauthorizedPage from './UnauthorizedPage.tsx';
 import UserProfilePage from './UserProfilePage.tsx';
 
 function App() {
-  const { isAuthenticated, loginWithRedirect, isLoading } = useAuth0();
+  const { isAuthenticated, user, loginWithRedirect, isLoading } = useAuth0();
   const navigate = useNavigate();
+  const [repository, setRepository] = useState<ITodoRepository | null>(null);
+  const [repoLoading, setRepoLoading] = useState(true);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -21,7 +26,6 @@ function App() {
         });
       };
 
-      // 3秒後にログインページにリダイレクト
       const timer = setTimeout(() => {
         redirectToLogin();
       }, 3000);
@@ -30,7 +34,29 @@ function App() {
     }
   }, [isAuthenticated, loginWithRedirect]);
 
-  if (isLoading || !isAuthenticated) {
+  useEffect(() => {
+    async function setupAuth() {
+      if (isAuthenticated && user) {
+        try {
+          await syncUserWithSupabase(user);
+          const repo = RepositoryFactory.getInstance().createTodoRepository(user);
+          setRepository(repo);
+        } catch (error) {
+          console.error('Authentication error:', error);
+        } finally {
+          setRepoLoading(false);
+        }
+      } else if (!isLoading) {
+        const repo = RepositoryFactory.getInstance().createTodoRepository();
+        setRepository(repo);
+        setRepoLoading(false);
+      }
+    }
+
+    setupAuth();
+  }, [isAuthenticated, user, isLoading]);
+
+  if (isLoading || (isAuthenticated && repoLoading)) {
     return (
       <Box
         display="flex"
@@ -88,7 +114,7 @@ function App() {
         <Routes>
           <Route path="/unauthorized" element={<UnauthorizedPage />} />
           <Route path="/profile" element={<UserProfilePage />} />
-          <Route path="/" element={<TodoList />} />
+          <Route path="/" element={repository && <TodoList />} />
         </Routes>
       </Box>
     </div>

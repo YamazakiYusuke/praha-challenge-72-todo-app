@@ -1,13 +1,17 @@
-import InMemoryTodoRepository from './repositories/InMemoryTodoRepository.tsx';
 import ITodoRepository from './repositories/ITodoRepository';
+import RepositoryFactory from './repositories/RepositoryFactory.tsx';
 import TodoItem from './repositories/TodoItem.tsx';
 
-class TodoListLogic {
+export default class TodoListLogic {
   private repository: ITodoRepository;
   private todos: TodoItem[] = [];
 
-  constructor(repository: ITodoRepository = new InMemoryTodoRepository()) {
-    this.repository = repository;
+  constructor() {
+    const repo = RepositoryFactory.getInstance().getCurrentRepository();
+    if (!repo) {
+      throw new Error('Repository must be initialized before creating TodoListLogic');
+    }
+    this.repository = repo;
   }
 
   async initialize(): Promise<void> {
@@ -48,6 +52,13 @@ class TodoListLogic {
   getTodos(): TodoItem[] {
     return this.todos;
   }
-}
 
-export default TodoListLogic;
+  async loadTodos(): Promise<TodoItem[]> {
+    const todos = await this.repository.getAll();
+    return todos;
+  }
+
+  async saveTodos(todos: TodoItem[]): Promise<TodoItem[]> {
+    return await this.repository.save(todos);
+  }
+}
