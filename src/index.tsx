@@ -7,6 +7,9 @@ import './index.css';
 import reportWebVitals from './reportWebVitals';
 
 async function enableMocking() {
+  // MSWを一時的に無効化
+  return;
+
   if (process.env.NODE_ENV !== 'development') {
     return;
   }

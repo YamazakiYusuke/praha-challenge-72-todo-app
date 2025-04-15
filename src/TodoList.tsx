@@ -3,6 +3,7 @@ import { Button, Checkbox, ClickAwayListener, Container, IconButton, List, ListI
 import { styled } from '@mui/material/styles';
 import React, { ChangeEvent, useEffect, useRef, useState } from 'react';
 import TodoListLogic from './TodoListLogic.ts';
+import { useAuth0 } from '@auth0/auth0-react';
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(2),
