@@ -7,7 +7,7 @@ import LoginButton from './components/LoginButton.tsx';
 import LogoutButton from './components/LogoutButton.tsx';
 import { syncUserWithSupabase } from './lib/auth.ts';
 import ITodoRepository from './repositories/ITodoRepository';
-import RepositoryFactory from './repositories/RepositoryFactory.tsx';
+import RepositoryFactory from './composables/RepositoryFactory.tsx';
 import TodoList from './TodoList.tsx';
 import UnauthorizedPage from './UnauthorizedPage.tsx';
 import UserProfilePage from './UserProfilePage.tsx';

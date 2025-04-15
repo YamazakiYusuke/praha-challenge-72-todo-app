@@ -37,6 +37,7 @@ class InMemoryTodoRepository implements ITodoRepository {
   }
 
   async create(input: NewTodoInput): Promise<TodoItem> {
+    // FIXME: The id assignment using Date.now() is not ideal. It could lead to issues if todos are created in quick succession, as the ids might not be unique. A better approach would be to use a counter or a UUID generator.
     const todo = new TodoItem(Date.now(), input.text, input.completed);
     this.todos.push(todo);
     return todo;
@@ -52,4 +53,4 @@ class InMemoryTodoRepository implements ITodoRepository {
   }
 }
 
-export default InMemoryTodoRepository; 
+export default InMemoryTodoRepository;

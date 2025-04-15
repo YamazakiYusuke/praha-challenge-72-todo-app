@@ -1,8 +1,8 @@
 import { User } from "@auth0/auth0-react";
 import { supabase } from "../lib/supabase.ts";
-import ITodoRepository from "./ITodoRepository";
-import InMemoryTodoRepository from "./InMemoryTodoRepository.tsx";
-import SupabaseTodoRepository from "./SupabaseTodoRepository.tsx";
+import ITodoRepository from "../repositories/ITodoRepository";
+import InMemoryTodoRepository from "../repositories/InMemoryTodoRepository.tsx";
+import SupabaseTodoRepository from "../repositories/SupabaseTodoRepository.tsx";
 
 class RepositoryFactory {
   private static instance: RepositoryFactory;
