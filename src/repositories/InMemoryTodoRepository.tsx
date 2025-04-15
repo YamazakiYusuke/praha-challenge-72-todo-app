@@ -1,5 +1,5 @@
 import ITodoRepository from './ITodoRepository';
-import TodoItem from './TodoItem.tsx';
+import TodoItem, { NewTodoInput } from './TodoItem.tsx';
 
 /**
  * インメモリのTodoリポジトリの実装
@@ -34,6 +34,21 @@ class InMemoryTodoRepository implements ITodoRepository {
     // 新しいTodoアイテムで置き換える
     this.todos = [...todos];
     return this.todos;
+  }
+
+  async create(input: NewTodoInput): Promise<TodoItem> {
+    const todo = new TodoItem(Date.now(), input.text, input.completed);
+    this.todos.push(todo);
+    return todo;
+  }
+
+  async update(todo: TodoItem): Promise<TodoItem> {
+    this.todos = this.todos.map(t => t.id === todo.id ? todo : t);
+    return todo;
+  }
+
+  async delete(id: number): Promise<void> {
+    this.todos = this.todos.filter(t => t.id !== id);
   }
 }
 

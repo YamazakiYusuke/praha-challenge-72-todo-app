@@ -22,9 +22,11 @@ export default class TodoListLogic {
     if (newTodo.trim() === '') {
       return null;
     }
-    const todo = new TodoItem(Date.now(), newTodo);
+    const todo = new TodoItem(0, newTodo);
     this.todos = [...this.todos, todo];
-    return this.repository.save(this.todos);
+    const savedTodos = await this.repository.save(this.todos);
+    this.todos = savedTodos;
+    return savedTodos;
   }
 
   deleteTodo(id: number): Promise<TodoItem[]> {

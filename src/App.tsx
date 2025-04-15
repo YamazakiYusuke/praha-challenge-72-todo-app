@@ -39,7 +39,7 @@ function App() {
       if (isAuthenticated && user) {
         try {
           await syncUserWithSupabase(user);
-          const repo = RepositoryFactory.getInstance().createTodoRepository(user);
+          const repo = await RepositoryFactory.getInstance().createTodoRepository(user);
           setRepository(repo);
         } catch (error) {
           console.error('Authentication error:', error);
@@ -47,7 +47,7 @@ function App() {
           setRepoLoading(false);
         }
       } else if (!isLoading) {
-        const repo = RepositoryFactory.getInstance().createTodoRepository();
+        const repo = await RepositoryFactory.getInstance().createTodoRepository();
         setRepository(repo);
         setRepoLoading(false);
       }

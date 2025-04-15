@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase.ts';
 import ITodoRepository from './ITodoRepository';
+import { NewTodoInput } from './TodoItem';
 import TodoItem from './TodoItem.tsx';
 
 class SupabaseTodoRepository implements ITodoRepository {
@@ -58,7 +59,6 @@ class SupabaseTodoRepository implements ITodoRepository {
       // 既存のTodo（更新用）
       const updateItems: {
         id: number;
-        user_id: string;
         text: string;
         completed: boolean;
       }[] = [];
@@ -67,18 +67,15 @@ class SupabaseTodoRepository implements ITodoRepository {
 
       // Todoを挿入用と更新用に分ける
       for (const todo of todos) {
-        if (todo.id < 0) {
-          // 新しいTodo（クライアント側のネガティブID）
+        if (!todo.id) { // IDがない場合は新規作成
           insertItems.push({
             user_id: this.userId,
             text: todo.text,
             completed: todo.completed
           });
         } else {
-          // 既存のTodo
           updateItems.push({
             id: todo.id,
-            user_id: this.userId,
             text: todo.text,
             completed: todo.completed
           });
@@ -134,6 +131,47 @@ class SupabaseTodoRepository implements ITodoRepository {
     } catch (error) {
       throw new Error('Failed to save todos');
     }
+  }
+
+  async create(input: NewTodoInput): Promise<TodoItem> {
+    const { data, error } = await supabase
+      .from('todos')
+      .insert({
+        user_id: this.userId,
+        text: input.text,
+        completed: input.completed
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return TodoItem.fromJSON(data);
+  }
+
+  async update(todo: TodoItem): Promise<TodoItem> {
+    const { data, error } = await supabase
+      .from('todos')
+      .update({
+        text: todo.text,
+        completed: todo.completed
+      })
+      .eq('id', todo.id)
+      .eq('user_id', this.userId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return TodoItem.fromJSON(data);
+  }
+
+  async delete(id: number): Promise<void> {
+    const { error } = await supabase
+      .from('todos')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', this.userId);
+
+    if (error) throw error;
   }
 }
 
