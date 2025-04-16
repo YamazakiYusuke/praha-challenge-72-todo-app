@@ -1,8 +1,9 @@
-import { Container, Paper } from '@mui/material';
+import { Box, Button, CircularProgress, Container, Paper, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import React, { ChangeEvent, useEffect, useRef, useState } from 'react';
 import TodoForm from './components/todo/TodoForm.tsx';
 import TodoItems from './components/todo/TodoItems.tsx';
+import { useAuth } from './hooks/useAuth.ts';
 import TodoListLogic from './TodoListLogic.ts';
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
@@ -19,37 +20,129 @@ function TodoList() {
   const [newTodo, setNewTodo] = useState('');
   const [editingTodoId, setEditingTodoId] = useState<number | null>(null);
   const [editText, setEditText] = useState('');
+  const [isInitializing, setIsInitializing] = useState(true);
+  const [initError, setInitError] = useState<string | null>(null);
 
-  const todoListLogic = useRef(new TodoListLogic()).current;
+  const { repository } = useAuth();
+  const todoListLogicRef = useRef<TodoListLogic | null>(null);
 
+  // TodoListLogicの初期化
   useEffect(() => {
-    const initializeTodos = async () => {
-      await todoListLogic.initialize();
-      setTodos(todoListLogic.getTodos());
+    let isMounted = true;
+    const initializeLogic = async () => {
+      try {
+        if (!repository) {
+          if (isMounted) setInitError("リポジトリが初期化されていません。再読み込みしてください。");
+          return;
+        }
+
+        // TodoListLogicの作成をトライ
+        try {
+          todoListLogicRef.current = new TodoListLogic();
+          await todoListLogicRef.current.initialize();
+          if (isMounted) {
+            setTodos(todoListLogicRef.current.getTodos());
+            setInitError(null);
+          }
+        } catch (error) {
+          console.error('TodoListLogic initialization error:', error);
+          if (isMounted) setInitError("TodoListの初期化に失敗しました。再読み込みしてください。");
+        }
+      } finally {
+        if (isMounted) setIsInitializing(false);
+      }
     };
-    initializeTodos();
-  }, []);
+
+    setIsInitializing(true);
+    const timerId = setTimeout(initializeLogic, 500); // 少し遅延させて実行
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timerId);
+    };
+  }, [repository]);
+
+  // リポジトリが利用可能でない場合
+  if (initError) {
+    return (
+      <Container maxWidth="sm">
+        <StyledPaper>
+          <Box p={2} textAlign="center">
+            <Typography color="error" variant="body1" gutterBottom>
+              {initError}
+            </Typography>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => window.location.reload()}
+              sx={{ mt: 2 }}
+            >
+              再読み込み
+            </Button>
+          </Box>
+        </StyledPaper>
+      </Container>
+    );
+  }
+
+  // 初期化中
+  if (isInitializing) {
+    return (
+      <Container maxWidth="sm">
+        <StyledPaper>
+          <Box
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            flexDirection="column"
+            p={4}
+          >
+            <CircularProgress size={40} />
+            <Typography variant="body2" sx={{ mt: 2 }}>
+              Todoリストを読み込み中...
+            </Typography>
+          </Box>
+        </StyledPaper>
+      </Container>
+    );
+  }
+
+  // TodoListLogicが初期化されていない場合は操作できないようにする
+  if (!todoListLogicRef.current) {
+    return (
+      <Container maxWidth="sm">
+        <StyledPaper>
+          <Typography variant="body1" align="center" p={2}>
+            Todoリストを読み込めませんでした。
+          </Typography>
+        </StyledPaper>
+      </Container>
+    );
+  }
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     setNewTodo(event.target.value);
   };
 
   const handleAddTodo = async () => {
-    const result = await todoListLogic.addTodo(newTodo);
+    if (!todoListLogicRef.current) return;
+    const result = await todoListLogicRef.current.addTodo(newTodo);
     if (result) {
-      setTodos(todoListLogic.getTodos());
+      setTodos(todoListLogicRef.current.getTodos());
       setNewTodo('');
     }
   };
 
   const handleDeleteTodo = async (id: number) => {
-    await todoListLogic.deleteTodo(id);
-    setTodos(todoListLogic.getTodos());
+    if (!todoListLogicRef.current) return;
+    await todoListLogicRef.current.deleteTodo(id);
+    setTodos(todoListLogicRef.current.getTodos());
   };
 
   const handleToggleComplete = async (id: number) => {
-    await todoListLogic.toggleComplete(id);
-    setTodos(todoListLogic.getTodos());
+    if (!todoListLogicRef.current) return;
+    await todoListLogicRef.current.toggleComplete(id);
+    setTodos(todoListLogicRef.current.getTodos());
   };
 
   const handleEditTodo = (id: number, text: string) => {
@@ -58,9 +151,10 @@ function TodoList() {
   };
 
   const handleSaveTodo = async (id: number) => {
-    const result = await todoListLogic.editTodo(id, editText);
+    if (!todoListLogicRef.current) return;
+    const result = await todoListLogicRef.current.editTodo(id, editText);
     if (result) {
-      setTodos(todoListLogic.getTodos());
+      setTodos(todoListLogicRef.current.getTodos());
       setEditingTodoId(null);
       setEditText('');
     }

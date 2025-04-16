@@ -20,6 +20,7 @@ export const useAuth = () => {
     if (!isAuthenticated && !isLoading) {
       // ログインページへの自動リダイレクトは行わず、代わりにプロンプト表示状態をセット
       setShowRedirectPrompt(true);
+      setRepoLoading(false); // 未認証の場合はローディング終了
     } else {
       setShowRedirectPrompt(false);
     }
@@ -34,27 +35,72 @@ export const useAuth = () => {
 
   // 認証後のリポジトリ初期化
   useEffect(() => {
-    async function setupAuth() {
-      if (isAuthenticated && user) {
-        try {
-          await syncUserWithSupabase(user);
-          const repo = await RepositoryFactory.getInstance().createTodoRepository(user);
-          setRepository(repo);
-        } catch (error) {
-          console.error('Authentication error:', error);
-        } finally {
+    let isMounted = true;
+    let timeoutId: NodeJS.Timeout | null = null;
+
+    // 初期化をタイムアウトさせる関数
+    const setupTimeout = () => {
+      // 5秒後にローディング状態を強制終了
+      timeoutId = setTimeout(() => {
+        if (isMounted) {
+          console.log('Repository initialization timeout - forcing load completion');
           setRepoLoading(false);
         }
-      } else if (!isLoading && isAuthenticated) {
-        const repo = await RepositoryFactory.getInstance().createTodoRepository();
-        setRepository(repo);
-        setRepoLoading(false);
-      } else if (!isLoading && !isAuthenticated) {
-        setRepoLoading(false);
+      }, 5000);
+    };
+
+    async function setupAuth() {
+      try {
+        if (isAuthenticated && user) {
+          console.log('Setting up auth for user:', user.sub);
+          setupTimeout(); // タイムアウト設定
+
+          try {
+            await syncUserWithSupabase(user);
+            const repo = await RepositoryFactory.getInstance().createTodoRepository(user);
+
+            if (isMounted) {
+              setRepository(repo);
+              setRepoLoading(false);
+              if (timeoutId) clearTimeout(timeoutId);
+            }
+          } catch (error) {
+            console.error('Authentication error:', error);
+            if (isMounted) {
+              // エラー発生時にもローディングを終了
+              setRepoLoading(false);
+              if (timeoutId) clearTimeout(timeoutId);
+            }
+          }
+        } else if (!isLoading && isAuthenticated) {
+          setupTimeout(); // タイムアウト設定
+          const repo = await RepositoryFactory.getInstance().createTodoRepository();
+
+          if (isMounted) {
+            setRepository(repo);
+            setRepoLoading(false);
+            if (timeoutId) clearTimeout(timeoutId);
+          }
+        } else if (!isLoading && !isAuthenticated) {
+          if (isMounted) {
+            setRepoLoading(false);
+          }
+        }
+      } catch (error) {
+        console.error('Unexpected error in auth setup:', error);
+        if (isMounted) {
+          setRepoLoading(false);
+        }
       }
     }
 
     setupAuth();
+
+    // クリーンアップ関数
+    return () => {
+      isMounted = false;
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, [isAuthenticated, user, isLoading]);
 
   return {
