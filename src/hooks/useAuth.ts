@@ -35,34 +35,21 @@ export const useAuth = () => {
   // 認証後のリポジトリ初期化
   useEffect(() => {
     async function setupAuth() {
-      try {
-        if (isAuthenticated && user) {
-          console.log('Setting up authenticated user:', user.sub);
-
-          try {
-            // iOS向けにエラーハンドリングを強化
-            await syncUserWithSupabase(user);
-          } catch (syncError) {
-            console.error('Error syncing with Supabase:', syncError);
-            // エラーが発生しても処理を続行
-          }
-
-          try {
-            const repo = await RepositoryFactory.getInstance().createTodoRepository(user);
-            setRepository(repo);
-          } catch (repoError) {
-            console.error('Repository creation error:', repoError);
-            // リポジトリの作成に失敗した場合でもフォールバックを試みる
-            const fallbackRepo = await RepositoryFactory.getInstance().createTodoRepository();
-            setRepository(fallbackRepo);
-          }
-        } else if (!isLoading && isAuthenticated) {
-          const repo = await RepositoryFactory.getInstance().createTodoRepository();
+      if (isAuthenticated && user) {
+        try {
+          await syncUserWithSupabase(user);
+          const repo = await RepositoryFactory.getInstance().createTodoRepository(user);
           setRepository(repo);
+        } catch (error) {
+          console.error('Authentication error:', error);
+        } finally {
+          setRepoLoading(false);
         }
-      } catch (error) {
-        console.error('Authentication setup error:', error);
-      } finally {
+      } else if (!isLoading && isAuthenticated) {
+        const repo = await RepositoryFactory.getInstance().createTodoRepository();
+        setRepository(repo);
+        setRepoLoading(false);
+      } else if (!isLoading && !isAuthenticated) {
         setRepoLoading(false);
       }
     }
