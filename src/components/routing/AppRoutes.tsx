@@ -10,7 +10,7 @@ import PrivateRoute from './PrivateRoute.tsx';
  * アプリケーションのルーティングを管理するコンポーネント
  */
 const AppRoutes: React.FC = () => {
-  const { repository } = useAuth();
+  const { repository, repoLoading } = useAuth();
 
   return (
     <Routes>
@@ -27,7 +27,7 @@ const AppRoutes: React.FC = () => {
         path="/"
         element={
           <PrivateRoute>
-            {repository && <TodoList />}
+            <TodoList />
           </PrivateRoute>
         }
       />
