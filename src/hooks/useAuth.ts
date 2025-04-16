@@ -13,23 +13,24 @@ export const useAuth = () => {
   const navigate = useNavigate();
   const [repository, setRepository] = useState<ITodoRepository | null>(null);
   const [repoLoading, setRepoLoading] = useState(true);
+  const [showRedirectPrompt, setShowRedirectPrompt] = useState(false);
 
-  // 未認証ユーザーをログインページにリダイレクト
+  // 未認証ユーザーに対する処理（リダイレクトプロンプトを表示）
   useEffect(() => {
     if (!isAuthenticated && !isLoading) {
-      const redirectToLogin = async () => {
-        await loginWithRedirect({
-          appState: { returnTo: window.location.pathname }
-        });
-      };
-
-      const timer = setTimeout(() => {
-        redirectToLogin();
-      }, 3000);
-
-      return () => clearTimeout(timer);
+      // ログインページへの自動リダイレクトは行わず、代わりにプロンプト表示状態をセット
+      setShowRedirectPrompt(true);
+    } else {
+      setShowRedirectPrompt(false);
     }
-  }, [isAuthenticated, loginWithRedirect, isLoading]);
+  }, [isAuthenticated, isLoading]);
+
+  // リダイレクト処理関数を定義
+  const handleLogin = async () => {
+    await loginWithRedirect({
+      appState: { returnTo: window.location.pathname }
+    });
+  };
 
   // 認証後のリポジトリ初期化
   useEffect(() => {
@@ -59,10 +60,11 @@ export const useAuth = () => {
   return {
     isAuthenticated,
     user,
-    loginWithRedirect,
+    loginWithRedirect: handleLogin,
     isLoading,
     repository,
     repoLoading,
-    navigate
+    navigate,
+    showRedirectPrompt
   };
 }; 
