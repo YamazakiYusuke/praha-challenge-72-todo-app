@@ -1,4 +1,4 @@
-import { Box, Button, CircularProgress, Container, Paper, Typography } from '@mui/material';
+import { Box, Button, Container, Paper, Skeleton, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import React, { ChangeEvent, useEffect, useRef, useState } from 'react';
 import TodoForm from './components/todo/TodoForm.tsx';
@@ -90,17 +90,18 @@ function TodoList() {
     return (
       <Container maxWidth="sm">
         <StyledPaper>
-          <Box
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
-            flexDirection="column"
-            p={4}
-          >
-            <CircularProgress size={40} />
-            <Typography variant="body2" sx={{ mt: 2 }}>
-              Todoリストを読み込み中...
-            </Typography>
+          <Box p={2}>
+            {/* TodoForm skeleton */}
+            <Box mb={2}>
+              <Skeleton variant="rectangular" height={56} width="100%" />
+            </Box>
+
+            {/* TodoItems skeleton */}
+            {[1, 2, 3].map((item) => (
+              <Box key={item} mb={1} display="flex" alignItems="center">
+                <Skeleton variant="rectangular" height={40} width="100%" />
+              </Box>
+            ))}
           </Box>
         </StyledPaper>
       </Container>
